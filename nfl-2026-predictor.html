@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2026 NFL Season Predictor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700;800&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --turf-dark:#0e2419;
+  --turf:#123423;
+  --turf-line:#1c4a30;
+  --chalk:#f4f2ea;
+  --chalk-dim:#c9c9bd;
+  --gold:#e2b13c;
+  --gold-bright:#f2c85b;
+  --win:#3c8a5b;
+  --loss:#b6473f;
+  --panel:#173a28;
+  --panel-2:#0f2a1c;
+  --border:#2a5a3d;
+  --radius:10px;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:
+    repeating-linear-gradient(90deg, rgba(255,255,255,0.02) 0 2px, transparent 2px 60px),
+    linear-gradient(180deg,var(--turf-dark),#0a1c13 60%, #081911);
+  color:var(--chalk);
+  font-family:'Inter',sans-serif;
+  min-height:100vh;
+  padding-bottom:60px;
+}
+h1,h2,h3,.display{font-family:'Anton',sans-serif; letter-spacing:0.5px; font-weight:400;}
+.mono-label{font-family:'Oswald',sans-serif; text-transform:uppercase; letter-spacing:1.5px;}
+
+/* ---------- HEADER ---------- */
+header.hero{
+  padding:38px 24px 26px;
+  text-align:center;
+  border-bottom:3px solid var(--gold);
+  background:radial-gradient(ellipse at top, rgba(226,177,60,0.10), transparent 60%);
+  position:relative;
+}
+header.hero h1{
+  font-size:clamp(32px,6vw,58px);
+  color:var(--chalk);
+  margin:0 0 6px;
+  text-shadow:0 0 30px rgba(226,177,60,0.25);
+}
+header.hero h1 span{color:var(--gold);}
+header.hero p{
+  margin:0; color:var(--chalk-dim); font-size:15px;
+  font-family:'Oswald',sans-serif; letter-spacing:2px; text-transform:uppercase;
+}
+
+/* ---------- NAV ---------- */
+nav.tabs{
+  display:flex; justify-content:center; flex-wrap:wrap; gap:10px;
+  padding:20px 16px 0; max-width:1100px; margin:0 auto;
+}
+nav.tabs button{
+  background:var(--panel); color:var(--chalk-dim);
+  border:2px solid var(--border); border-radius:999px;
+  padding:10px 22px; font-family:'Oswald',sans-serif; font-weight:600;
+  letter-spacing:1px; text-transform:uppercase; font-size:13px;
+  cursor:pointer; transition:all .15s ease;
+}
+nav.tabs button:hover{border-color:var(--gold); color:var(--chalk);}
+nav.tabs button.active{
+  background:var(--gold); color:#12210a; border-color:var(--gold);
+  box-shadow:0 0 18px rgba(226,177,60,0.35);
+}
+
+main{max-width:1100px; margin:0 auto; padding:26px 16px 10px;}
+
+/* ---------- CARDS / PANELS ---------- */
+.panel{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  padding:20px;
+  margin-bottom:20px;
+}
+.panel-title{
+  font-family:'Oswald',sans-serif; text-transform:uppercase; letter-spacing:1.5px;
+  color:var(--gold); font-size:13px; font-weight:600; margin:0 0 14px;
+  border-bottom:1px solid var(--border); padding-bottom:10px;
+}
+
+/* ---------- TEAM PICKER (grid grouped by division) ---------- */
+.division-group{margin-bottom:14px;}
+.division-group h4{
+  font-family:'Oswald',sans-serif; font-size:12px; text-transform:uppercase;
+  letter-spacing:1.5px; color:var(--chalk-dim); margin:0 0 8px;
+}
+.team-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:8px;}
+.team-chip{
+  display:flex; align-items:center; gap:10px;
+  background:var(--panel-2); border:1px solid var(--border); border-radius:8px;
+  padding:8px 10px; cursor:pointer; text-align:left; color:var(--chalk);
+  font-family:'Inter',sans-serif; font-size:13px; font-weight:600;
+}
+.team-chip:hover{border-color:var(--gold);}
+.team-chip.active{border-color:var(--gold); background:rgba(226,177,60,0.12);}
+.team-chip .rec{margin-left:auto; font-family:'Oswald',sans-serif; font-size:12px; color:var(--chalk-dim);}
+
+/* ---------- LOGO BADGE ---------- */
+.badge{
+  width:34px; height:34px; border-radius:50%; flex:0 0 auto;
+  display:flex; align-items:center; justify-content:center;
+  font-family:'Oswald',sans-serif; font-weight:700; font-size:11px; color:#fff;
+  border:2px solid rgba(255,255,255,0.55);
+  text-shadow:0 1px 2px rgba(0,0,0,0.5);
+}
+.badge.sm{width:26px; height:26px; font-size:9px;}
+.badge.lg{width:52px; height:52px; font-size:15px;}
+
+/* ---------- TEAM DASHBOARD ---------- */
+.team-header{display:flex; align-items:center; gap:16px; margin-bottom:18px; flex-wrap:wrap;}
+.team-header .name{font-size:26px;}
+.team-header .stat-line{
+  font-family:'Oswald',sans-serif; letter-spacing:1px; color:var(--gold-bright);
+  font-size:15px;
+}
+
+/* ---------- GAME CARD ---------- */
+.game-card{
+  background:var(--panel-2); border:1px solid var(--border); border-radius:8px;
+  padding:12px 14px; margin-bottom:10px;
+  display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:10px;
+}
+.game-meta{
+  grid-column:1 / -1; display:flex; justify-content:space-between;
+  font-family:'Oswald',sans-serif; font-size:11px; color:var(--chalk-dim);
+  text-transform:uppercase; letter-spacing:1px; margin-bottom:2px;
+}
+.game-meta .intl{color:var(--gold);}
+.pick-btn{
+  display:flex; align-items:center; gap:10px;
+  background:transparent; border:2px solid var(--border); border-radius:8px;
+  padding:9px 10px; cursor:pointer; color:var(--chalk);
+  font-family:'Inter',sans-serif; font-weight:600; font-size:13px;
+  transition:all .12s ease; width:100%; text-align:left;
+}
+.pick-btn.away{justify-content:flex-start;}
+.pick-btn.home{justify-content:flex-end; flex-direction:row-reverse;}
+.pick-btn:hover{border-color:var(--gold-bright);}
+.pick-btn.selected{
+  border-color:var(--win); background:rgba(60,138,91,0.18);
+  box-shadow:inset 0 0 0 1px var(--win);
+}
+.at-sign{
+  font-family:'Anton',sans-serif; color:var(--chalk-dim); font-size:13px;
+}
+.pick-btn .tname{white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+
+/* ---------- WEEK NAV ---------- */
+.week-nav{display:flex; align-items:center; justify-content:center; gap:14px; margin-bottom:18px;}
+.week-nav button{
+  background:var(--panel-2); border:1px solid var(--border); color:var(--chalk);
+  border-radius:8px; padding:8px 14px; cursor:pointer; font-size:16px;
+}
+.week-nav button:hover{border-color:var(--gold);}
+.week-nav select{
+  background:var(--panel-2); color:var(--chalk); border:1px solid var(--border);
+  border-radius:8px; padding:8px 12px; font-family:'Oswald',sans-serif;
+  font-weight:600; letter-spacing:1px; text-transform:uppercase; font-size:14px;
+}
+.week-progress{
+  text-align:center; font-family:'Oswald',sans-serif; color:var(--chalk-dim);
+  font-size:12px; letter-spacing:1px; text-transform:uppercase; margin-bottom:14px;
+}
+
+/* ---------- STANDINGS ---------- */
+.conf-columns{display:grid; grid-template-columns:1fr 1fr; gap:20px;}
+@media (max-width:760px){.conf-columns{grid-template-columns:1fr;}}
+.conf-title{
+  font-size:22px; text-align:center; margin:0 0 14px; color:var(--gold);
+}
+table.standings{width:100%; border-collapse:collapse; margin-bottom:16px; font-size:13px;}
+table.standings caption{
+  text-align:left; font-family:'Oswald',sans-serif; text-transform:uppercase;
+  letter-spacing:1px; color:var(--chalk-dim); padding-bottom:6px; font-size:12px;
+}
+table.standings th{
+  text-align:left; font-family:'Oswald',sans-serif; text-transform:uppercase;
+  font-size:10.5px; letter-spacing:1px; color:var(--chalk-dim);
+  border-bottom:1px solid var(--border); padding:6px 6px;
+}
+table.standings td{padding:7px 6px; border-bottom:1px solid rgba(255,255,255,0.05);}
+table.standings tr.leader td{background:rgba(226,177,60,0.08);}
+table.standings td.teamcell{display:flex; align-items:center; gap:8px;}
+table.standings td.num{text-align:center; font-family:'Oswald',sans-serif;}
+
+.legend{
+  font-size:11px; color:var(--chalk-dim); text-align:center; margin-top:-4px; margin-bottom:20px;
+}
+
+/* ---------- BUTTONS ---------- */
+.actions{display:flex; justify-content:center; gap:12px; flex-wrap:wrap; margin:18px 0 4px;}
+.btn{
+  font-family:'Oswald',sans-serif; text-transform:uppercase; letter-spacing:1px;
+  font-weight:600; font-size:13px; padding:11px 22px; border-radius:999px;
+  cursor:pointer; border:2px solid var(--gold);
+}
+.btn.primary{background:var(--gold); color:#12210a;}
+.btn.ghost{background:transparent; color:var(--gold);}
+.btn.danger{border-color:var(--loss); color:var(--loss); background:transparent;}
+
+footer{text-align:center; color:var(--chalk-dim); font-size:11px; padding:30px 16px 10px; opacity:0.6;}
+
+/* ---------- PRINT SHEET (hidden on screen) ---------- */
+#printSheet{display:none;}
+@media print{
+  body *{visibility:hidden;}
+  header, nav, main > div:not(#printSheetWrap), .actions, footer{display:none !important;}
+  #printSheetWrap, #printSheetWrap *{visibility:visible;}
+  #printSheetWrap{position:absolute; top:0; left:0; width:100%; background:#fff; color:#111;}
+  #printSheet{display:block;}
+}
+#printSheetWrap{display:none;}
+.print-page{padding:20px; font-family:Arial, sans-serif; color:#111;}
+.print-page h1{font-family:Arial, sans-serif; text-align:center; margin-bottom:2px;}
+.print-page .sub{text-align:center; color:#555; margin-bottom:20px; font-size:12px;}
+.print-cols{display:grid; grid-template-columns:1fr 1fr; gap:24px;}
+.print-cols table{width:100%; border-collapse:collapse; margin-bottom:16px; font-size:12px;}
+.print-cols th, .print-cols td{border:1px solid #999; padding:4px 6px; text-align:left;}
+.print-cols th{background:#eee;}
+.print-cols caption{font-weight:bold; text-align:left; padding:6px 0 4px; font-size:13px;}
+.print-cols tr.leader{background:#fdf3d6;}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <h1>2026 <span>NFL</span> Season Predictor</h1>
+  <p>Pick every winner. Watch the standings build themselves.</p>
+</header>
+
+<nav class="tabs">
+  <button data-tab="team" class="active">By Team</button>
+  <button data-tab="week">By Week</button>
+  <button data-tab="standings">Standings</button>
+  <button data-tab="print">Print Final Standings</button>
+</nav>
+
+<main>
+
+  <!-- ============ BY TEAM VIEW ============ -->
+  <div id="view-team">
+    <div class="panel">
+      <div class="panel-title">Choose a team</div>
+      <div id="teamPicker"></div>
+    </div>
+    <div class="panel" id="teamDashboard" style="display:none;">
+      <div class="team-header">
+        <div class="badge lg" id="td-badge"></div>
+        <div>
+          <div class="display name" id="td-name"></div>
+          <div class="stat-line" id="td-record"></div>
+        </div>
+      </div>
+      <div id="teamGames"></div>
+    </div>
+  </div>
+
+  <!-- ============ BY WEEK VIEW ============ -->
+  <div id="view-week" style="display:none;">
+    <div class="panel">
+      <div class="week-nav">
+        <button id="prevWeek">&#8592;</button>
+        <select id="weekSelect"></select>
+        <button id="nextWeek">&#8594;</button>
+      </div>
+      <div class="week-progress" id="weekProgress"></div>
+      <div id="weekGames"></div>
+    </div>
+  </div>
+
+  <!-- ============ STANDINGS VIEW ============ -->
+  <div id="view-standings" style="display:none;">
+    <div class="panel">
+      <div class="panel-title">Predicted Standings — live, updates as you pick</div>
+      <div class="legend">Sorted by predicted win %. Gold row = division leader. Undecided games are not counted yet.</div>
+      <div id="standingsOutput"></div>
+    </div>
+  </div>
+
+  <!-- ============ PRINT VIEW (on-screen prompt) ============ -->
+  <div id="view-print" style="display:none;">
+    <div class="panel" style="text-align:center;">
+      <div class="panel-title">Print Your Final Predicted Standings</div>
+      <p style="color:var(--chalk-dim); max-width:520px; margin:0 auto 18px;">
+        This builds a clean, printer-friendly sheet of your predicted final standings for both conferences —
+        ready to print or save as a PDF.
+      </p>
+      <button class="btn primary" id="doPrintBtn">Open Print View</button>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn ghost" id="randomizeBtn">Simulate Random Season</button>
+    <button class="btn danger" id="resetBtn">Reset All Predictions</button>
+  </div>
+
+</main>
+
+<footer>Built for fun &mdash; predictions are stored locally in your browser only.</footer>
+
+<!-- ============ PRINT SHEET (built dynamically, shown only when printing) ============ -->
+<div id="printSheetWrap">
+  <div class="print-page" id="printSheet">
+    <h1>2026 NFL Predicted Final Standings</h1>
+    <div class="sub" id="printSubtitle"></div>
+    <div class="print-cols" id="printCols"></div>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   TEAM DATA
+========================================================= */
+const TEAMS = {
+  BUF:{name:"Buffalo Bills", conf:"AFC", div:"East", c1:"#00338D", c2:"#C60C30"},
+  MIA:{name:"Miami Dolphins", conf:"AFC", div:"East", c1:"#008E97", c2:"#FC4C02"},
+  NE :{name:"New England Patriots", conf:"AFC", div:"East", c1:"#002244", c2:"#C60C30"},
+  NYJ:{name:"New York Jets", conf:"AFC", div:"East", c1:"#125740", c2:"#000000"},
+
+  BAL:{name:"Baltimore Ravens", conf:"AFC", div:"North", c1:"#241773", c2:"#000000"},
+  CIN:{name:"Cincinnati Bengals", conf:"AFC", div:"North", c1:"#FB4F14", c2:"#000000"},
+  CLE:{name:"Cleveland Browns", conf:"AFC", div:"North", c1:"#311D00", c2:"#FF3C00"},
+  PIT:{name:"Pittsburgh Steelers", conf:"AFC", div:"North", c1:"#FFB612", c2:"#101820"},
+
+  HOU:{name:"Houston Texans", conf:"AFC", div:"South", c1:"#03202F", c2:"#A71930"},
+  IND:{name:"Indianapolis Colts", conf:"AFC", div:"South", c1:"#002C5F", c2:"#A2AAAD"},
+  JAX:{name:"Jacksonville Jaguars", conf:"AFC", div:"South", c1:"#101820", c2:"#D7A22A"},
+  TEN:{name:"Tennessee Titans", conf:"AFC", div:"South", c1:"#0C2340", c2:"#4B92DB"},
+
+  DEN:{name:"Denver Broncos", conf:"AFC", div:"West", c1:"#FB4F14", c2:"#002244"},
+  KC :{name:"Kansas City Chiefs", conf:"AFC", div:"West", c1:"#E31837", c2:"#FFB81C"},
+  LV :{name:"Las Vegas Raiders", conf:"AFC", div:"West", c1:"#000000", c2:"#A5ACAF"},
+  LAC:{name:"Los Angeles Chargers", conf:"AFC", div:"West", c1:"#0080C6", c2:"#FFC20E"},
+
+  DAL:{name:"Dallas Cowboys", conf:"NFC", div:"East", c1:"#041E42", c2:"#869397"},
+  NYG:{name:"New York Giants", conf:"NFC", div:"East", c1:"#0B2265", c2:"#A71930"},
+  PHI:{name:"Philadelphia Eagles", conf:"NFC", div:"East", c1:"#004C54", c2:"#A5ACAF"},
+  WAS:{name:"Washington Commanders", conf:"NFC", div:"East", c1:"#5A1414", c2:"#FFB612"},
+
+  CHI:{name:"Chicago Bears", conf:"NFC", div:"North", c1:"#0B162A", c2:"#C83803"},
+  DET:{name:"Detroit Lions", conf:"NFC", div:"North", c1:"#0076B6", c2:"#B0B7BC"},
+  GB :{name:"Green Bay Packers", conf:"NFC", div:"North", c1:"#203731", c2:"#FFB612"},
+  MIN:{name:"Minnesota Vikings", conf:"NFC", div:"North", c1:"#4F2683", c2:"#FFC62F"},
+
+  ATL:{name:"Atlanta Falcons", conf:"NFC", div:"South", c1:"#A71930", c2:"#000000"},
+  CAR:{name:"Carolina Panthers", conf:"NFC", div:"South", c1:"#0085CA", c2:"#101820"},
+  NO :{name:"New Orleans Saints", conf:"NFC", div:"South", c1:"#D3BC8D", c2:"#101820"},
+  TB :{name:"Tampa Bay Buccaneers", conf:"NFC", div:"South", c1:"#D50A0A", c2:"#34302B"},
+
+  ARI:{name:"Arizona Cardinals", conf:"NFC", div:"West", c1:"#97233F", c2:"#000000"},
+  LA :{name:"Los Angeles Rams", conf:"NFC", div:"West", c1:"#003594", c2:"#FFA300"},
+  SF :{name:"San Francisco 49ers", conf:"NFC", div:"West", c1:"#AA0000", c2:"#B3995D"},
+  SEA:{name:"Seattle Seahawks", conf:"NFC", div:"West", c1:"#002244", c2:"#69BE28"},
+};
+
+/* =========================================================
+   FULL 2026 REGULAR SEASON SCHEDULE (272 games)
+========================================================= */
+const RAW_SCHEDULE = [
+{week:1, games:[
+  ["NE","SEA","Wed Sep 9"],["SF","LA","Thu Sep 10"],["NYJ","TEN","Sun Sep 13"],["BUF","HOU","Sun Sep 13"],
+  ["CHI","CAR","Sun Sep 13"],["CLE","JAX","Sun Sep 13"],["ATL","PIT","Sun Sep 13"],["BAL","IND","Sun Sep 13"],
+  ["TB","CIN","Sun Sep 13"],["NO","DET","Sun Sep 13"],["MIA","LV","Sun Sep 13"],["ARI","LAC","Sun Sep 13"],
+  ["GB","MIN","Sun Sep 13"],["WAS","PHI","Sun Sep 13"],["DAL","NYG","Sun Sep 13"],["DEN","KC","Mon Sep 14"]
+]},
+{week:2, games:[
+  ["DET","BUF","Thu Sep 17"],["MIN","CHI","Sun Sep 20"],["PHI","TEN","Sun Sep 20"],["CIN","HOU","Sun Sep 20"],
+  ["CLE","TB","Sun Sep 20"],["PIT","NE","Sun Sep 20"],["GB","NYJ","Sun Sep 20"],["CAR","ATL","Sun Sep 20"],
+  ["NO","BAL","Sun Sep 20"],["LV","LAC","Sun Sep 20"],["JAX","DEN","Sun Sep 20"],["MIA","SF","Sun Sep 20"],
+  ["SEA","ARI","Sun Sep 20"],["WAS","DAL","Sun Sep 20"],["IND","KC","Sun Sep 20"],["NYG","LA","Mon Sep 21"]
+]},
+{week:3, games:[
+  ["ATL","GB","Thu Sep 24"],["HOU","IND","Sun Sep 27"],["KC","MIA","Sun Sep 27"],["LAC","BUF","Sun Sep 27"],
+  ["TEN","NYG","Sun Sep 27"],["CIN","PIT","Sun Sep 27"],["SEA","WAS","Sun Sep 27"],["NE","JAX","Sun Sep 27"],
+  ["CAR","CLE","Sun Sep 27"],["NYJ","DET","Sun Sep 27"],["ARI","SF","Sun Sep 27"],["MIN","TB","Sun Sep 27"],
+  ["LV","NO","Sun Sep 27"],["BAL","DAL","Sun Sep 27","Brazil"],["LA","DEN","Sun Sep 27"],["PHI","CHI","Mon Sep 28"]
+]},
+{week:4, games:[
+  ["PIT","CLE","Thu Oct 1"],["IND","WAS","Sun Oct 4","England"],["DAL","HOU","Sun Oct 4"],["NYJ","CHI","Sun Oct 4"],
+  ["JAX","CIN","Sun Oct 4"],["TEN","BAL","Sun Oct 4"],["ARI","NYG","Sun Oct 4"],["LA","PHI","Sun Oct 4"],
+  ["GB","TB","Sun Oct 4"],["NE","BUF","Sun Oct 4"],["MIA","MIN","Sun Oct 4"],["DEN","SF","Sun Oct 4"],
+  ["LAC","SEA","Sun Oct 4"],["KC","LV","Sun Oct 4"],["DET","CAR","Sun Oct 4"],["ATL","NO","Mon Oct 5"]
+]},
+{week:5, games:[
+  ["TB","DAL","Thu Oct 8"],["PHI","JAX","Sun Oct 11","England"],["HOU","TEN","Sun Oct 11"],["MIN","NO","Sun Oct 11"],
+  ["CLE","NYJ","Sun Oct 11"],["CIN","MIA","Sun Oct 11"],["LV","NE","Sun Oct 11"],["IND","PIT","Sun Oct 11"],
+  ["NYG","WAS","Sun Oct 11"],["DEN","LAC","Sun Oct 11"],["SF","SEA","Sun Oct 11"],["DET","ARI","Sun Oct 11"],
+  ["CHI","GB","Sun Oct 11"],["BAL","ATL","Sun Oct 11"],["BUF","LA","Mon Oct 12"]
+]},
+{week:6, games:[
+  ["SEA","DEN","Thu Oct 15"],["HOU","JAX","Sun Oct 18","England"],["TEN","IND","Sun Oct 18"],["NYJ","NE","Sun Oct 18"],
+  ["NO","NYG","Sun Oct 18"],["CAR","PHI","Sun Oct 18"],["CHI","ATL","Sun Oct 18"],["PIT","TB","Sun Oct 18"],
+  ["BAL","CLE","Sun Oct 18"],["ARI","LA","Sun Oct 18"],["BUF","LV","Sun Oct 18"],["LAC","KC","Sun Oct 18"],
+  ["DAL","GB","Sun Oct 18"],["WAS","SF","Mon Oct 19"]
+]},
+{week:7, games:[
+  ["NE","CHI","Thu Oct 22"],["PIT","NO","Sun Oct 25","France"],["CLE","TEN","Sun Oct 25"],["IND","MIN","Sun Oct 25"],
+  ["NYG","HOU","Sun Oct 25"],["SF","ATL","Sun Oct 25"],["TB","CAR","Sun Oct 25"],["MIA","NYJ","Sun Oct 25"],
+  ["CIN","BAL","Sun Oct 25"],["DEN","ARI","Sun Oct 25"],["LA","LV","Sun Oct 25"],["GB","DET","Sun Oct 25"],
+  ["KC","SEA","Sun Oct 25"],["DAL","PHI","Mon Oct 26"]
+]},
+{week:8, games:[
+  ["CAR","GB","Thu Oct 29"],["ARI","DAL","Sun Nov 1"],["BAL","BUF","Sun Nov 1"],["TEN","CIN","Sun Nov 1"],
+  ["LV","NYJ","Sun Nov 1"],["CLE","PIT","Sun Nov 1"],["ATL","TB","Sun Nov 1"],["MIN","DET","Sun Nov 1"],
+  ["IND","JAX","Sun Nov 1"],["LAC","LA","Sun Nov 1"],["KC","DEN","Sun Nov 1"],["NE","MIA","Sun Nov 1"],
+  ["PHI","WAS","Sun Nov 1"],["CHI","SEA","Mon Nov 2"]
+]},
+{week:9, games:[
+  ["JAX","BAL","Thu Nov 5"],["CIN","ATL","Sun Nov 8","Spain"],["CLE","NO","Sun Nov 8"],["NYJ","KC","Sun Nov 8"],
+  ["DET","MIA","Sun Nov 8"],["LA","WAS","Sun Nov 8"],["DEN","CAR","Sun Nov 8"],["NYG","PHI","Sun Nov 8"],
+  ["DAL","IND","Sun Nov 8"],["HOU","LAC","Sun Nov 8"],["LV","SF","Sun Nov 8"],["ARI","SEA","Sun Nov 8"],
+  ["GB","NE","Sun Nov 8"],["TB","CHI","Sun Nov 8"],["BUF","MIN","Mon Nov 9"]
+]},
+{week:10, games:[
+  ["WAS","NYG","Thu Nov 12"],["NE","DET","Sun Nov 15","Germany"],["CAR","NO","Sun Nov 15"],["MIN","GB","Sun Nov 15"],
+  ["JAX","TEN","Sun Nov 15"],["MIA","IND","Sun Nov 15"],["KC","ATL","Sun Nov 15"],["HOU","CLE","Sun Nov 15"],
+  ["BUF","NYJ","Sun Nov 15"],["SEA","LV","Sun Nov 15"],["LA","ARI","Sun Nov 15"],["SF","DAL","Sun Nov 15"],
+  ["PIT","CIN","Sun Nov 15"],["LAC","BAL","Mon Nov 16"]
+]},
+{week:11, games:[
+  ["IND","HOU","Thu Nov 19"],["NO","CHI","Sun Nov 22"],["TEN","DAL","Sun Nov 22"],["ARI","KC","Sun Nov 22"],
+  ["JAX","NYG","Sun Nov 22"],["MIA","BUF","Sun Nov 22"],["TB","DET","Sun Nov 22"],["BAL","CAR","Sun Nov 22"],
+  ["NYJ","LAC","Sun Nov 22"],["LV","DEN","Sun Nov 22"],["PIT","PHI","Sun Nov 22"],["MIN","SF","Sun Nov 22","Mexico"],
+  ["CIN","WAS","Mon Nov 23"]
+]},
+{week:12, games:[
+  ["GB","LA","Wed Nov 25"],["CHI","DET","Thu Nov 26"],["PHI","DAL","Thu Nov 26"],["KC","BUF","Thu Nov 26"],
+  ["DEN","PIT","Fri Nov 27"],["BAL","HOU","Sun Nov 29"],["ATL","MIN","Sun Nov 29"],["NYJ","MIA","Sun Nov 29"],
+  ["NO","CIN","Sun Nov 29"],["NYG","IND","Sun Nov 29"],["LV","CLE","Sun Nov 29"],["TEN","JAX","Sun Nov 29"],
+  ["SEA","SF","Sun Nov 29"],["WAS","ARI","Sun Nov 29"],["NE","LAC","Sun Nov 29"],["CAR","TB","Mon Nov 30"]
+]},
+{week:13, games:[
+  ["KC","LA","Thu Dec 3"],["JAX","CHI","Sun Dec 6"],["WAS","TEN","Sun Dec 6"],["GB","NO","Sun Dec 6"],
+  ["SF","NYG","Sun Dec 6"],["DET","ATL","Sun Dec 6"],["LAC","TB","Sun Dec 6"],["CIN","CLE","Sun Dec 6"],
+  ["MIA","DEN","Sun Dec 6"],["PHI","ARI","Sun Dec 6"],["CAR","MIN","Sun Dec 6"],["BUF","NE","Sun Dec 6"],
+  ["HOU","PIT","Sun Dec 6"],["DAL","SEA","Mon Dec 7"]
+]},
+{week:14, games:[
+  ["MIN","NE","Thu Dec 10"],["DEN","NYJ","Sun Dec 13"],["IND","PHI","Sun Dec 13"],["TB","BAL","Sun Dec 13"],
+  ["TEN","DET","Sun Dec 13"],["HOU","WAS","Sun Dec 13"],["NO","CAR","Sun Dec 13"],["CHI","MIA","Sun Dec 13"],
+  ["ATL","CLE","Sun Dec 13"],["LAC","LV","Sun Dec 13"],["LA","SF","Sun Dec 13"],["NYG","SEA","Sun Dec 13"],
+  ["KC","CIN","Sun Dec 13"],["BUF","GB","Sun Dec 13"],["PIT","JAX","Mon Dec 14"]
+]},
+{week:15, games:[
+  ["SF","LAC","Thu Dec 17"],["SEA","PHI","Sat Dec 19"],["CHI","BUF","Sat Dec 19"],["MIA","GB","Sun Dec 20"],
+  ["IND","TEN","Sun Dec 20"],["JAX","HOU","Sun Dec 20"],["CLE","NYG","Sun Dec 20"],["BAL","PIT","Sun Dec 20"],
+  ["NO","TB","Sun Dec 20"],["ATL","WAS","Sun Dec 20"],["CIN","CAR","Sun Dec 20"],["NYJ","ARI","Sun Dec 20"],
+  ["DEN","LV","Sun Dec 20"],["DAL","LA","Sun Dec 20"],["DET","MIN","Sun Dec 20"],["NE","KC","Mon Dec 21"]
+]},
+{week:16, games:[
+  ["HOU","PHI","Thu Dec 24"],["GB","CHI","Fri Dec 25"],["BUF","DEN","Fri Dec 25"],["LA","SEA","Fri Dec 25"],
+  ["WAS","MIN","Sat Dec 26"],["CAR","PIT","Sat Dec 26"],["CIN","IND","Sat Dec 26"],["TB","ATL","Sat Dec 26"],
+  ["ARI","NO","Sun Dec 27"],["NE","NYJ","Sun Dec 27"],["LAC","MIA","Sun Dec 27"],["CLE","BAL","Sun Dec 27"],
+  ["TEN","LV","Sun Dec 27"],["SF","KC","Sun Dec 27"],["JAX","DAL","Sun Dec 27"],["NYG","DET","Mon Dec 28"]
+]},
+{week:17, games:[
+  ["BAL","CIN","Thu Dec 31"],["KC","LAC","Sat Jan 2"],["LA","TB","Sat Jan 2"],["WAS","JAX","Sat Jan 2"],
+  ["DEN","NE","Sat Jan 2"],["PIT","TEN","Sun Jan 3"],["NYG","DAL","Sun Jan 3"],["NO","ATL","Sun Jan 3"],
+  ["BUF","MIA","Sun Jan 3"],["MIN","NYJ","Sun Jan 3"],["IND","CLE","Sun Jan 3"],["SEA","CAR","Sun Jan 3"],
+  ["LV","ARI","Sun Jan 3"],["DET","CHI","Sun Jan 3"],["PHI","SF","Sun Jan 3"],["HOU","GB","Mon Jan 4"]
+]},
+{week:18, games:[
+  ["SEA","LA","Sun Jan 10"],["LAC","DEN","Sun Jan 10"],["SF","ARI","Sun Jan 10"],["LV","KC","Sun Jan 10"],
+  ["TEN","HOU","Sun Jan 10"],["DET","GB","Sun Jan 10"],["CHI","MIN","Sun Jan 10"],["TB","NO","Sun Jan 10"],
+  ["PHI","NYG","Sun Jan 10"],["MIA","NE","Sun Jan 10"],["JAX","IND","Sun Jan 10"],["NYJ","BUF","Sun Jan 10"],
+  ["CLE","CIN","Sun Jan 10"],["PIT","BAL","Sun Jan 10"],["DAL","WAS","Sun Jan 10"],["ATL","CAR","Sun Jan 10"]
+]},
+];
+
+/* Flatten into a single list with unique IDs and per-team lookup */
+const SCHEDULE = [];
+RAW_SCHEDULE.forEach(w=>{
+  w.games.forEach((g,i)=>{
+    SCHEDULE.push({
+      id: `w${w.week}_${i}`,
+      week: w.week,
+      away: g[0], home: g[1], date: g[2], intl: g[3]||null
+    });
+  });
+});
+
+/* =========================================================
+   STATE
+========================================================= */
+const STORAGE_KEY = "nfl2026predictions";
+let predictions = {};
+try{
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if(saved) predictions = JSON.parse(saved);
+}catch(e){ predictions = {}; }
+
+function savePredictions(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(predictions)); }catch(e){}
+}
+
+function setPick(gameId, winnerSide){
+  // winnerSide: 'home' | 'away' | null (toggle off)
+  if(predictions[gameId] === winnerSide){
+    delete predictions[gameId];
+  } else {
+    predictions[gameId] = winnerSide;
+  }
+  savePredictions();
+  renderAll();
+}
+
+/* =========================================================
+   STANDINGS COMPUTATION
+========================================================= */
+function computeStandings(){
+  const rec = {};
+  Object.keys(TEAMS).forEach(t=> rec[t] = {w:0,l:0,played:0});
+  SCHEDULE.forEach(g=>{
+    const pick = predictions[g.id];
+    if(!pick) return;
+    const winner = pick === 'home' ? g.home : g.away;
+    const loser  = pick === 'home' ? g.away : g.home;
+    rec[winner].w++; rec[winner].played++;
+    rec[loser].l++;  rec[loser].played++;
+  });
+  Object.keys(rec).forEach(t=>{
+    const r = rec[t];
+    r.pct = r.played ? (r.w / r.played) : 0;
+  });
+  return rec;
+}
+
+function teamGames(teamAbbr){
+  return SCHEDULE.filter(g=> g.home === teamAbbr || g.away === teamAbbr);
+}
+
+function totalPicked(){
+  return Object.keys(predictions).length;
+}
+
+/* =========================================================
+   RENDER: BADGE
+========================================================= */
+function badgeHtml(abbr, size){
+  const t = TEAMS[abbr];
+  const cls = size ? `badge ${size}` : 'badge';
+  return `<div class="${cls}" style="background:linear-gradient(160deg, ${t.c1} 0%, ${t.c1} 50%, ${t.c2} 50%, ${t.c2} 100%);">${abbr}</div>`;
+}
+
+/* =========================================================
+   RENDER: TEAM PICKER
+========================================================= */
+function renderTeamPicker(){
+  const rec = computeStandings();
+  const container = document.getElementById('teamPicker');
+  const confs = ["AFC","NFC"];
+  const divs = ["East","North","South","West"];
+  let html = '';
+  confs.forEach(conf=>{
+    divs.forEach(div=>{
+      const teams = Object.keys(TEAMS).filter(t=> TEAMS[t].conf===conf && TEAMS[t].div===div);
+      html += `<div class="division-group"><h4>${conf} ${div}</h4><div class="team-grid">`;
+      teams.forEach(t=>{
+        const r = rec[t];
+        const active = (window.__selectedTeam === t) ? 'active' : '';
+        html += `<button class="team-chip ${active}" data-team="${t}">
+          ${badgeHtml(t,'sm')}<span>${TEAMS[t].name.split(' ').slice(-1)[0]}</span>
+          <span class="rec">${r.w}-${r.l}</span>
+        </button>`;
+      });
+      html += `</div></div>`;
+    });
+  });
+  container.innerHTML = html;
+  container.querySelectorAll('.team-chip').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      window.__selectedTeam = btn.dataset.team;
+      renderAll();
+    });
+  });
+}
+
+function renderTeamDashboard(){
+  const dash = document.getElementById('teamDashboard');
+  const t = window.__selectedTeam;
+  if(!t){ dash.style.display='none'; return; }
+  dash.style.display='block';
+  const rec = computeStandings()[t];
+  document.getElementById('td-badge').outerHTML = badgeHtml(t,'lg').replace('class="badge lg"','id="td-badge" class="badge lg"');
+  document.getElementById('td-name').textContent = TEAMS[t].name;
+  document.getElementById('td-record').textContent =
+    `Predicted record: ${rec.w}-${rec.l}  •  ${rec.played}/17 games decided  •  ${TEAMS[t].conf} ${TEAMS[t].div}`;
+
+  const games = teamGames(t).sort((a,b)=> a.week-b.week);
+  let html = '';
+  games.forEach(g=>{
+    const pick = predictions[g.id];
+    const awaySel = pick === 'away' ? 'selected' : '';
+    const homeSel = pick === 'home' ? 'selected' : '';
+    html += `
+      <div class="game-card">
+        <div class="game-meta">
+          <span>Week ${g.week} &middot; ${g.date}</span>
+          <span class="intl">${g.intl ? '🌍 '+g.intl : ''}</span>
+        </div>
+        <button class="pick-btn away ${awaySel}" data-game="${g.id}" data-side="away">
+          ${badgeHtml(g.away,'sm')}<span class="tname">${TEAMS[g.away].name}</span>
+        </button>
+        <span class="at-sign">@</span>
+        <button class="pick-btn home ${homeSel}" data-game="${g.id}" data-side="home">
+          <span class="tname">${TEAMS[g.home].name}</span>${badgeHtml(g.home,'sm')}
+        </button>
+      </div>`;
+  });
+  document.getElementById('teamGames').innerHTML = html;
+  document.getElementById('teamGames').querySelectorAll('.pick-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=> setPick(btn.dataset.game, btn.dataset.side));
+  });
+}
+
+/* =========================================================
+   RENDER: BY WEEK
+========================================================= */
+window.__selectedWeek = window.__selectedWeek || 1;
+
+function renderWeekSelector(){
+  const sel = document.getElementById('weekSelect');
+  if(sel.options.length === 0){
+    for(let w=1; w<=18; w++){
+      const opt = document.createElement('option');
+      opt.value = w; opt.textContent = `Week ${w}`;
+      sel.appendChild(opt);
+    }
+    sel.addEventListener('change', ()=>{ window.__selectedWeek = parseInt(sel.value); renderAll(); });
+  }
+  sel.value = window.__selectedWeek;
+}
+
+function renderWeekGames(){
+  const w = window.__selectedWeek;
+  const games = SCHEDULE.filter(g=> g.week === w);
+  const decided = games.filter(g=> predictions[g.id]).length;
+  document.getElementById('weekProgress').textContent = `${decided} of ${games.length} games picked`;
+  let html = '';
+  games.forEach(g=>{
+    const pick = predictions[g.id];
+    const awaySel = pick === 'away' ? 'selected' : '';
+    const homeSel = pick === 'home' ? 'selected' : '';
+    html += `
+      <div class="game-card">
+        <div class="game-meta">
+          <span>${g.date}</span>
+          <span class="intl">${g.intl ? '🌍 '+g.intl : ''}</span>
+        </div>
+        <button class="pick-btn away ${awaySel}" data-game="${g.id}" data-side="away">
+          ${badgeHtml(g.away,'sm')}<span class="tname">${TEAMS[g.away].name}</span>
+        </button>
+        <span class="at-sign">@</span>
+        <button class="pick-btn home ${homeSel}" data-game="${g.id}" data-side="home">
+          <span class="tname">${TEAMS[g.home].name}</span>${badgeHtml(g.home,'sm')}
+        </button>
+      </div>`;
+  });
+  document.getElementById('weekGames').innerHTML = html;
+  document.getElementById('weekGames').querySelectorAll('.pick-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=> setPick(btn.dataset.game, btn.dataset.side));
+  });
+}
+
+/* =========================================================
+   RENDER: STANDINGS
+========================================================= */
+function divisionTeamsSorted(rec, conf, div){
+  return Object.keys(TEAMS)
+    .filter(t=> TEAMS[t].conf===conf && TEAMS[t].div===div)
+    .sort((a,b)=> rec[b].pct - rec[a].pct || rec[b].w - rec[a].w);
+}
+
+function renderStandingsInto(containerId, forPrint){
+  const rec = computeStandings();
+  const confs = ["AFC","NFC"];
+  const divs = ["East","North","South","West"];
+  let html = forPrint ? '' : '<div class="conf-columns">';
+  confs.forEach(conf=>{
+    if(!forPrint) html += `<div><h2 class="conf-title">${conf}</h2>`;
+    divs.forEach(div=>{
+      const teams = divisionTeamsSorted(rec, conf, div);
+      html += `<table class="standings"><caption>${conf} ${div}</caption>
+        <thead><tr><th>Team</th><th class="num">W</th><th class="num">L</th><th class="num">PCT</th></tr></thead><tbody>`;
+      teams.forEach((t,idx)=>{
+        const r = rec[t];
+        const leaderClass = idx===0 && r.played>0 ? 'leader' : '';
+        html += `<tr class="${leaderClass}">
+          <td class="teamcell">${forPrint ? '' : badgeHtml(t,'sm')}${TEAMS[t].name}</td>
+          <td class="num">${r.w}</td><td class="num">${r.l}</td><td class="num">${r.played? r.pct.toFixed(3).replace('0.','.') : '—'}</td>
+        </tr>`;
+      });
+      html += `</tbody></table>`;
+    });
+    if(!forPrint) html += `</div>`;
+  });
+  if(!forPrint) html += '</div>';
+  document.getElementById(containerId).innerHTML = html;
+}
+
+/* =========================================================
+   PRINT SHEET BUILD
+========================================================= */
+function buildPrintSheet(){
+  const picked = totalPicked();
+  document.getElementById('printSubtitle').textContent =
+    `${picked} of 272 regular-season games predicted — generated ${new Date().toLocaleDateString()}`;
+  renderStandingsInto('printCols', true);
+}
+
+/* =========================================================
+   TAB / NAV CONTROL
+========================================================= */
+function showTab(tab){
+  document.querySelectorAll('nav.tabs button').forEach(b=> b.classList.toggle('active', b.dataset.tab===tab));
+  document.getElementById('view-team').style.display = tab==='team' ? 'block':'none';
+  document.getElementById('view-week').style.display = tab==='week' ? 'block':'none';
+  document.getElementById('view-standings').style.display = tab==='standings' ? 'block':'none';
+  document.getElementById('view-print').style.display = tab==='print' ? 'block':'none';
+  window.__activeTab = tab;
+}
+
+document.querySelectorAll('nav.tabs button').forEach(btn=>{
+  btn.addEventListener('click', ()=> showTab(btn.dataset.tab));
+});
+
+document.getElementById('prevWeek').addEventListener('click', ()=>{
+  window.__selectedWeek = Math.max(1, window.__selectedWeek-1);
+  renderAll();
+});
+document.getElementById('nextWeek').addEventListener('click', ()=>{
+  window.__selectedWeek = Math.min(18, window.__selectedWeek+1);
+  renderAll();
+});
+
+document.getElementById('doPrintBtn').addEventListener('click', ()=>{
+  buildPrintSheet();
+  setTimeout(()=> window.print(), 150);
+});
+
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  if(confirm('Clear every prediction you\'ve made? This cannot be undone.')){
+    predictions = {};
+    savePredictions();
+    renderAll();
+  }
+});
+
+document.getElementById('randomizeBtn').addEventListener('click', ()=>{
+  if(!confirm('This will fill in EVERY undecided game with a random winner. Continue?')) return;
+  SCHEDULE.forEach(g=>{
+    if(!predictions[g.id]){
+      predictions[g.id] = Math.random() < 0.5 ? 'home' : 'away';
+    }
+  });
+  savePredictions();
+  renderAll();
+});
+
+/* =========================================================
+   MASTER RENDER
+========================================================= */
+function renderAll(){
+  renderTeamPicker();
+  renderTeamDashboard();
+  renderWeekSelector();
+  renderWeekGames();
+  renderStandingsInto('standingsOutput', false);
+}
+
+renderAll();
+showTab('team');
+</script>
+</body>
+</html>
